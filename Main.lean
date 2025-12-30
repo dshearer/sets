@@ -40,6 +40,10 @@ axiom AllClassesComeFromV : ∀ a, a ⊆ V
 def Set : Type := { x : Class // x ∈ V }
 instance : Coe Set Class := ⟨Subtype.val⟩
 
+-- theorem members_are_sets {a b : Class} (a_in_b : a ∈ b) : a ∈ V :=
+--   have b_is_subclass_of_v := AllClassesComeFromV b
+--   b_is_subclass_of_v a a_in_b
+
 /--
 P₁: Separation. This is an informal meta-axiom. It says that you can add any axiom of this form:
 
@@ -124,7 +128,7 @@ axiom A₃ : Null ∈ V
 /--***** Pairing *****--/
 
 axiom Pair (a b : Set) : Class
-axiom P₁_Pair_φ (a b : Set) : ∀ (x : Set), x ∈ (Pair a b) ↔ x = a ∨ x = b
+axiom P₁_Pair_φ (a b : Set) : ∀ (x : Class), x ∈ (Pair a b) ↔ x = a ∨ x = b
 
 noncomputable abbrev Single (a : Set) := Pair a a
 
@@ -133,12 +137,16 @@ axiom A₄ (a b : Set) : Pair a b ∈ V
 theorem C_4_1 (a : Set) : (Pair a a) ∈ V := A₄ a a
 
 theorem pair_has_left (a b : Set) : a ∈ Pair a b :=
-  have a_is_a_or_b : a = a ∨ a = b := Or.inl rfl
+  have a_is_a_or_b : a.val = a.val ∨ a.val = b.val := Or.inl rfl
   (P₁_Pair_φ a b a).mpr a_is_a_or_b
 
 theorem pair_has_right (a b : Set) : b ∈ Pair a b :=
-  have b_is_a_or_b : b = a ∨ b = b := Or.inr rfl
+  have b_is_a_or_b : b.val = a.val ∨ b.val = b.val := Or.inr rfl
   (P₁_Pair_φ a b b).mpr b_is_a_or_b
+
+theorem in_single {x : Class} {y : Set} (h : x ∈ Single y) : x = y :=
+  have poss := (P₁_Pair_φ y y x).mp h
+  poss.elim (fun h => h) (fun h => h)
 
 /--***** Union *****--/
 
@@ -153,13 +161,25 @@ axiom P₁_union (a b : Class) : Class
 axiom P₁_union_φ (a b : Class) : ∀ x, x ∈ (P₁_union a b) ↔ (x ∈ a ∨ x ∈ b)
 infix:60 " U " => P₁_union
 
+theorem union_sub_left (a : Class) { b : Class }: a ⊆ a U b :=
+  fun x =>
+  fun x_in_a : x ∈ a =>
+  have prop := P₁_union_φ a b x
+  prop.mpr (Or.inl x_in_a)
+
+theorem union_sub_right (b : Class) { a : Class }: b ⊆ a U b :=
+  fun x =>
+  fun x_in_b : x ∈ b =>
+  have prop := P₁_union_φ a b x
+  prop.mpr (Or.inr x_in_b)
+
 theorem union_pair_sub_union {x y} : Yunion (Pair x y) ⊆ x U y :=
   fun z =>
   fun (h : z ∈ Yunion (Pair x y)) =>
   have z_in_k : ∃ k, k ∈ Pair x y ∧ z ∈ k := (Yunion_prop (Pair x y) z).mp h
   let ⟨ k, hk ⟩ := z_in_k
   have k_in_v : k ∈ V := all_members_are_sets hk.left
-  have k_is_x_or_y : ⟨ k, k_in_v ⟩ = x ∨ ⟨ k, k_in_v ⟩ = y := (P₁_Pair_φ x y ⟨ k, k_in_v ⟩ ).mp hk.left
+  have k_is_x_or_y : k = x ∨ k = y := (P₁_Pair_φ x y k ).mp hk.left
   have z_in_x_or_y : z ∈ x ∨ z ∈ y :=
     Or.elim k_is_x_or_y
     (fun k_is_x =>
@@ -224,23 +244,36 @@ theorem number_in_successor (n : Set) : n ∈ suc n :=
   have n_in_either : n ∈ n ∨ n ∈ Single n := Or.inr n_in_single
   (P₁_union_φ n (Single n) n).mpr n_in_either
 
-def is_number (x : Class) : Prop := x = Null ∨ ∃ n, x = suc n
+theorem number_sub_successor (n : Set) : n ⊆ suc n := union_sub_left n
+
+def is_inductive_set (x : Class) : Prop := (x ∈ V) ∧ (Null ∈ x) ∧ (∀ (y : Set), y ∈ x → suc y ∈ x)
+
+def is_number (x : Class) : Prop := ∀ (y : Class), is_inductive_set y → x ∈ y
 
 def Number : Type := { x : Set // is_number x}
 instance : Coe Number Set := ⟨Subtype.val⟩
 
+theorem successor_possibilities {x : Class} {n : Number} (h : x ∈ suc n) : x ∈ n ∨ x = n :=
+  have x_in_n_or_x_in_single := (P₁_union_φ n (Single n) x).mp h
+  x_in_n_or_x_in_single.elim
+    (fun x_in_n => Or.inl x_in_n)
+    (fun (x_in_single : x ∈ Single n) =>
+      have x_is_x : x = n := in_single x_in_single
+      Or.inr x_is_x)
+
 axiom ω : Class
-axiom P₂_ω_φ (x : Set) : x ∈ ω ↔ is_number x
+axiom P₂_ω_φ (x : Class) : x ∈ ω ↔ is_number x
 
 axiom A₇ : ω ∈ V
 
-theorem peano_1 : is_number Null := Or.inl rfl
+theorem peano_1 : is_number Null :=
+  fun _ => fun y_is_inductive =>
+  y_is_inductive.right.left
 
 theorem peano_2 (n : Number) : is_number (suc n) :=
-  -- suc n = Null ∨ ∃ k, suc n = suc k
-  have suc_n_eq_suc_n : suc n = suc n := by rfl
-  have exists_k : ∃ k, suc n = suc k := Exists.intro n suc_n_eq_suc_n
-  Or.inr exists_k
+  fun y => fun y_is_inductive =>
+  have n_in_y : n ∈ y := n.property y y_is_inductive
+  y_is_inductive.right.right n n_in_y
 
 theorem peano_3 (n : Number) : suc n ≠ Null :=
   byContradiction
@@ -249,3 +282,59 @@ theorem peano_3 (n : Number) : suc n ≠ Null :=
     have n_in_null : n ∈ Null := Eq.subst (not_not.mp suc_eq_null) n_in_suc
     have n_not_in_null : n ∉ Null := Null_prop n
     absurd n_in_null n_not_in_null
+
+theorem peano_5 (a : Set) : is_inductive_set a → ∀ (n : Number), n ∈ a :=
+  fun a_is_inductive =>
+  fun n =>
+  n.property a a_is_inductive
+
+-- def is_transitive (a : Class) : Prop := ∀ x y, x ∈ y ∧ y ∈ a → x ∈ a
+
+theorem succ_n_transitive {n : Number} (h : is_transitive n) : is_transitive (suc n) :=
+  fun (x y : Class) =>
+  fun (h1 : x ∈ y ∧ y ∈ suc n) =>
+  (successor_possibilities h1.right).elim
+    (fun h2 : y ∈ n =>
+      -- // x ∈ suc n
+      have x_in_n : x ∈ n := h x y ⟨ h1.left, h2 ⟩
+      (number_sub_successor n) x x_in_n)
+    (fun h2 : y = n =>
+      -- // x ∈ suc n
+      have x_in_n : x ∈ n := Eq.subst h2 h1.left
+      (number_sub_successor n) x x_in_n)
+
+theorem null_transitive : is_transitive Null :=
+  fun x y =>
+  fun h : x ∈ y ∧ y ∈ Null =>
+  have y_not_in_null : y ∉ Null := Null_prop y
+  absurd h.right y_not_in_null
+
+axiom P₂_transitive_numbers : Class
+axiom P₂_transitive_numbers_φ {x : Class} : x ∈ P₂_transitive_numbers ↔ is_number x ∧ is_transitive x
+
+-- def is_swelled (a : Class) : Prop := ∀ x y, x ⊆ y → y ∈ a → x ∈ a
+
+theorem class_of_trans_nbrs_is_set : P₂_transitive_numbers ∈ V :=
+  have is_subset_of_ω : P₂_transitive_numbers ⊆ ω :=
+    fun x => fun x_in_trans =>
+    have x_is_nbr : is_number x := (P₂_transitive_numbers_φ.mp x_in_trans).left
+    (P₂_ω_φ x).mpr x_is_nbr
+  A₂ P₂_transitive_numbers ω is_subset_of_ω A₇
+
+theorem class_of_trans_nbrs_is_inductive : is_inductive_set P₂_transitive_numbers :=
+  have null_is_in_class : Null ∈ P₂_transitive_numbers := P₂_transitive_numbers_φ.mpr ⟨ peano_1, null_transitive ⟩
+  have class_has_successors : ∀ (y : Set), y ∈ P₂_transitive_numbers → suc y ∈ P₂_transitive_numbers :=
+    fun y => fun y_in_class : y ∈ P₂_transitive_numbers =>
+    let y_num : Number := ⟨ y, (P₂_transitive_numbers_φ.mp y_in_class).left ⟩
+    have y_is_trans : is_transitive y_num := (P₂_transitive_numbers_φ.mp y_in_class).right
+    have suc_is_transitive := succ_n_transitive y_is_trans
+    have suc_is_nbr := peano_2 y_num
+    P₂_transitive_numbers_φ.mpr ⟨ suc_is_nbr, suc_is_transitive ⟩
+  ⟨ class_of_trans_nbrs_is_set, null_is_in_class, class_has_successors ⟩
+
+theorem T_3_1 (n : Number) : is_transitive n :=
+  have n_is_in_class : n ∈ P₂_transitive_numbers := n.property P₂_transitive_numbers class_of_trans_nbrs_is_inductive
+  (P₂_transitive_numbers_φ.mp n_is_in_class).right
+
+theorem peano_4 (n m : Number) : suc n = suc m → n = m :=
+  _
