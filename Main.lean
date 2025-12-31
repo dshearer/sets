@@ -35,7 +35,7 @@ theorem equality_sub {a b} : (a ⊆ b ∧ b ⊆ a) → a = b :=
 axiom V : Class
 
 -- V contains all the classes that can be members (and we call these "sets")
-axiom AllClassesComeFromV : ∀ a, a ⊆ V
+axiom AllClassesComeFromV : ∀ (a : Class), a ⊆ V
 
 def Set : Type := { x : Class // x ∈ V }
 instance : Coe Set Class := ⟨Subtype.val⟩
@@ -58,30 +58,30 @@ are classes, but only certain classes are members (sets).
 
 -- Theorem 1.1: Not all classes are sets
 
-axiom P₁_Ordinary : Class
-axiom P₁_Ordinary_φ : ∀ (x : Set), x ∈ P₁_Ordinary ↔ x ∉ x
+axiom P₂_Ordinary : Class
+axiom P₂_Ordinary_φ : ∀ (x : Set), x ∈ P₂_Ordinary ↔ x ∉ x
 
 theorem T_1_1 : ∃ a, a ∉ V :=
   have Ordinary_not_in_V :=
     byContradiction
       fun O_in_V =>
-      have O_in_and_not_in_self := P₁_Ordinary_φ ⟨ P₁_Ordinary, (not_not.mp O_in_V) ⟩
-      Or.elim (em (P₁_Ordinary ∈ P₁_Ordinary))
+      have O_in_and_not_in_self := P₂_Ordinary_φ ⟨ P₂_Ordinary, (not_not.mp O_in_V) ⟩
+      Or.elim (em (P₂_Ordinary ∈ P₂_Ordinary))
         (fun is_in =>
           have is_not_in := O_in_and_not_in_self.mp is_in
           absurd is_in is_not_in)
         (fun is_not_in =>
           have is_in := O_in_and_not_in_self.mpr is_not_in
           absurd is_not_in (not_not.mpr is_in))
-  Exists.intro P₁_Ordinary Ordinary_not_in_V
+  Exists.intro P₂_Ordinary Ordinary_not_in_V
 
 -- Theorem 1.2: For any class A there is a subclass B of A s.t. B is not an element of A
 
-axiom P₁_MakeOrdinary (a : Class) : ∃ b, ∀ x, x ∈ b ↔ (x ∈ a ∧ x ∉ x)
+axiom P₂_MakeOrdinary (a : Class) : ∃ b, ∀ x, x ∈ b ↔ (x ∈ a ∧ x ∉ x)
 
 theorem T_1_2 : ∀ a, ∃ b, b ⊆ a ∧ b ∉ a :=
   fun a =>
-  let ⟨ b, b_is_ord_subset_of_a ⟩ := (P₁_MakeOrdinary a)
+  let ⟨ b, b_is_ord_subset_of_a ⟩ := (P₂_MakeOrdinary a)
   have b_sub_a : b ⊆ a :=
     fun (x) (x_in_b : x ∈ b) => ((b_is_ord_subset_of_a x).mp x_in_b).left
   have b_not_in_a : b ∉ a :=
@@ -128,7 +128,7 @@ axiom A₃ : Null ∈ V
 /--***** Pairing *****--/
 
 axiom Pair (a b : Set) : Class
-axiom P₁_Pair_φ (a b : Set) : ∀ (x : Class), x ∈ (Pair a b) ↔ x = a ∨ x = b
+axiom P₂_Pair_φ (a b : Set) : ∀ (x : Class), x ∈ (Pair a b) ↔ x = a ∨ x = b
 
 noncomputable abbrev Single (a : Set) := Pair a a
 
@@ -138,14 +138,14 @@ theorem C_4_1 (a : Set) : (Pair a a) ∈ V := A₄ a a
 
 theorem pair_has_left (a b : Set) : a ∈ Pair a b :=
   have a_is_a_or_b : a.val = a.val ∨ a.val = b.val := Or.inl rfl
-  (P₁_Pair_φ a b a).mpr a_is_a_or_b
+  (P₂_Pair_φ a b a).mpr a_is_a_or_b
 
 theorem pair_has_right (a b : Set) : b ∈ Pair a b :=
   have b_is_a_or_b : b.val = a.val ∨ b.val = b.val := Or.inr rfl
-  (P₁_Pair_φ a b b).mpr b_is_a_or_b
+  (P₂_Pair_φ a b b).mpr b_is_a_or_b
 
 theorem in_single {x : Class} {y : Set} (h : x ∈ Single y) : x = y :=
-  have poss := (P₁_Pair_φ y y x).mp h
+  have poss := (P₂_Pair_φ y y x).mp h
   poss.elim (fun h => h) (fun h => h)
 
 /--***** Union *****--/
@@ -157,20 +157,20 @@ axiom A₅ : ∀ (x : Set), (Yunion x) ∈ V
 
 def is_non_empty (a : Class) : Prop := ∃ x, x ∈ a
 
-axiom P₁_union (a b : Class) : Class
-axiom P₁_union_φ (a b : Class) : ∀ x, x ∈ (P₁_union a b) ↔ (x ∈ a ∨ x ∈ b)
-infix:60 " U " => P₁_union
+axiom P₂_union (a b : Class) : Class
+axiom P₂_union_φ (a b : Class) : ∀ x, x ∈ (P₂_union a b) ↔ (x ∈ a ∨ x ∈ b)
+infix:60 " U " => P₂_union
 
 theorem union_sub_left (a : Class) { b : Class }: a ⊆ a U b :=
   fun x =>
   fun x_in_a : x ∈ a =>
-  have prop := P₁_union_φ a b x
+  have prop := P₂_union_φ a b x
   prop.mpr (Or.inl x_in_a)
 
 theorem union_sub_right (b : Class) { a : Class }: b ⊆ a U b :=
   fun x =>
   fun x_in_b : x ∈ b =>
-  have prop := P₁_union_φ a b x
+  have prop := P₂_union_φ a b x
   prop.mpr (Or.inr x_in_b)
 
 theorem union_pair_sub_union {x y} : Yunion (Pair x y) ⊆ x U y :=
@@ -179,7 +179,7 @@ theorem union_pair_sub_union {x y} : Yunion (Pair x y) ⊆ x U y :=
   have z_in_k : ∃ k, k ∈ Pair x y ∧ z ∈ k := (Yunion_prop (Pair x y) z).mp h
   let ⟨ k, hk ⟩ := z_in_k
   have k_in_v : k ∈ V := all_members_are_sets hk.left
-  have k_is_x_or_y : k = x ∨ k = y := (P₁_Pair_φ x y k ).mp hk.left
+  have k_is_x_or_y : k = x ∨ k = y := (P₂_Pair_φ x y k ).mp hk.left
   have z_in_x_or_y : z ∈ x ∨ z ∈ y :=
     Or.elim k_is_x_or_y
     (fun k_is_x =>
@@ -188,12 +188,12 @@ theorem union_pair_sub_union {x y} : Yunion (Pair x y) ⊆ x U y :=
     (fun k_is_y =>
       have z_in_y : z ∈ y := by rw [←k_is_y]; exact hk.right
       Or.intro_right (z ∈ x) z_in_y)
-  (P₁_union_φ x y z).mpr z_in_x_or_y
+  (P₂_union_φ x y z).mpr z_in_x_or_y
 
 theorem union_sub_union_pair {x y : Set} : x U y ⊆ Yunion (Pair x y) :=
   fun z =>
   fun (h : z ∈ x U y) =>
-  have z_in_x_or_y : z ∈ x ∨ z ∈ y := (P₁_union_φ x y z).mp h
+  have z_in_x_or_y : z ∈ x ∨ z ∈ y := (P₂_union_φ x y z).mp h
   have exists_k : ∃ k, k ∈ (Pair x y) ∧ z ∈ k :=
     z_in_x_or_y.elim
     (fun z_in_x =>
@@ -242,7 +242,7 @@ noncomputable def suc (x : Set) := x U Single x
 theorem number_in_successor (n : Set) : n ∈ suc n :=
   have n_in_single : n ∈ Single n := pair_has_left n n
   have n_in_either : n ∈ n ∨ n ∈ Single n := Or.inr n_in_single
-  (P₁_union_φ n (Single n) n).mpr n_in_either
+  (P₂_union_φ n (Single n) n).mpr n_in_either
 
 theorem number_sub_successor (n : Set) : n ⊆ suc n := union_sub_left n
 
@@ -254,7 +254,7 @@ def Number : Type := { x : Set // is_number x}
 instance : Coe Number Set := ⟨Subtype.val⟩
 
 theorem successor_possibilities {x : Class} {n : Number} (h : x ∈ suc n) : x ∈ n ∨ x = n :=
-  have x_in_n_or_x_in_single := (P₁_union_φ n (Single n) x).mp h
+  have x_in_n_or_x_in_single := (P₂_union_φ n (Single n) x).mp h
   x_in_n_or_x_in_single.elim
     (fun x_in_n => Or.inl x_in_n)
     (fun (x_in_single : x ∈ Single n) =>
