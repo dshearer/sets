@@ -33,22 +33,24 @@ are classes, but only certain classes are members (sets).
 
 -- Theorem 1.1: Not all classes are sets
 
-protected axiom P₂_Ordinary : Class
-protected axiom P₂_Ordinary_φ : ∀ (x : Set), x ∈ P₂_Ordinary ↔ x ∉ x
+def is_ordinary (a : Class) : Prop := a ∉ a
+
+protected axiom Ordinary : Class
+protected axiom Ordinary_φ : ∀ (a : Set), a ∈ Sets.Ordinary ↔ is_ordinary a
 
 theorem T_1_1 : ∃ a, a ∉ V :=
   have Ordinary_not_in_V :=
     byContradiction
       fun O_in_V =>
-      have O_in_and_not_in_self := Sets.P₂_Ordinary_φ ⟨ Sets.P₂_Ordinary, (not_not.mp O_in_V) ⟩
-      Or.elim (em (Sets.P₂_Ordinary ∈ Sets.P₂_Ordinary))
+      have O_in_and_not_in_self := Sets.Ordinary_φ ⟨ Sets.Ordinary, (not_not.mp O_in_V) ⟩
+      Or.elim (em (Sets.Ordinary ∈ Sets.Ordinary))
         (fun is_in =>
           have is_not_in := O_in_and_not_in_self.mp is_in
           absurd is_in is_not_in)
         (fun is_not_in =>
           have is_in := O_in_and_not_in_self.mpr is_not_in
           absurd is_not_in (not_not.mpr is_in))
-  Exists.intro Sets.P₂_Ordinary Ordinary_not_in_V
+  Exists.intro Sets.Ordinary Ordinary_not_in_V
 
 -- Theorem 1.2: For any class A there is a subclass B of A s.t. B is not an element of A
 
@@ -90,6 +92,9 @@ theorem T_2_3 : V ∉ V :=
     absurd b_in_v b_not_in_v
 
 theorem all_members_are_sets {a b : Class} (h : a ∈ b) : a ∈ V := (all_classes_come_from_v b) a h
+
+theorem members_of_trans_are_subsets {a b : Class} (h1 : is_transitive b) (h2 : a ∈ b) : a ⊆ b :=
+  fun x => fun x_in_a => h1 x a ⟨ x_in_a, h2 ⟩
 
 /--***** The empty set *****--/
 
@@ -181,7 +186,7 @@ theorem union_sub_union_pair {x y : Set} : x U y ⊆ Yunion (Pair x y) :=
 
 theorem union_of_sets_is_set {x y : Set} : x U y ∈ V :=
   have union_pair_is_set : Yunion (Pair x y) ∈ V := A₅ ⟨ (Pair x y), A₄ x y ⟩
-  have union_equals_union_pair := equality_sub ⟨ union_sub_union_pair, union_pair_sub_union ⟩
+  have union_equals_union_pair := equality_sub.mpr ⟨ union_sub_union_pair, union_pair_sub_union ⟩
   by rw [union_equals_union_pair]; assumption
 
 -- Intersection
