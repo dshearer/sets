@@ -102,7 +102,7 @@ instance : IsSet Null where
 /--***** Pairing *****--/
 
 axiom Pair (a b : Class) [IsSet a] [IsSet b] : Class
-axiom Pair_φ (a b : Class) [IsSet a] [IsSet b] : ∀ (x : Class), x ∈ (Pair a b) ↔ x = a ∨ x = b
+axiom Pair_φ {a b} [IsSet a] [IsSet b] (x) : x ∈ (Pair a b) ↔ x = a ∨ x = b
 
 noncomputable abbrev Single (a : Class) [IsSet a] := Pair a a
 
@@ -114,13 +114,13 @@ instance (a b : Class) [IsSet a] [IsSet b] : IsSet (Pair a b) where
 theorem C_4_1 (a) [IsSet a] : Pair a a ∈ V := A₄ a a
 
 theorem pair_has_left (a b) [IsSet a] [IsSet b] : a ∈ Pair a b :=
-  (Pair_φ a b a).mpr (Or.inl rfl)
+  (Pair_φ a).mpr (Or.inl rfl)
 
 theorem pair_has_right (a b) [IsSet a] [IsSet b] : b ∈ Pair a b :=
-  (Pair_φ a b b).mpr (Or.inr rfl)
+  (Pair_φ b).mpr (Or.inr rfl)
 
-theorem in_single {x y : Class} [IsSet y] (h : x ∈ Single y) : x = y :=
-  (Pair_φ y y x).mp h |>.elim id id
+theorem in_single {x y : Class} [IsSet x] [IsSet y] (h : x ∈ Single y) : x = y :=
+  (Pair_φ x).mp h |>.elim id id
 
 /--***** Union *****--/
 
@@ -133,27 +133,28 @@ def is_non_empty (a : Class) : Prop := ∃ x, x ∈ a
 
 protected axiom P₂_union (a b : Class) : Class
 axiom P₂_union_φ (a b : Class) : ∀ x, x ∈ (Sets.P₂_union a b) ↔ (x ∈ a ∨ x ∈ b)
-infix:60 " U " => Sets.P₂_union
+infix:60 " ∪ " => Sets.P₂_union
 
-theorem union_sub_left (a : Class) { b : Class }: a ⊆ a U b :=
+theorem union_sub_left (a : Class) { b : Class }: a ⊆ a ∪ b :=
   fun x =>
   fun x_in_a : x ∈ a =>
   have prop := P₂_union_φ a b x
   prop.mpr (Or.inl x_in_a)
 
-theorem union_sub_right (b : Class) { a : Class }: b ⊆ a U b :=
+theorem union_sub_right (b : Class) { a : Class }: b ⊆ a ∪ b :=
   fun x =>
   fun x_in_b : x ∈ b =>
   have prop := P₂_union_φ a b x
   prop.mpr (Or.inr x_in_b)
 
-theorem union_pair_sub_union {x y} [IsSet x] [IsSet y] : Yunion (Pair x y) ⊆ x U y :=
+theorem union_pair_sub_union {x y} [IsSet x] [IsSet y] : Yunion (Pair x y) ⊆ x ∪ y :=
   fun z =>
   fun (h : z ∈ Yunion (Pair x y)) =>
   have z_in_k : ∃ k, k ∈ Pair x y ∧ z ∈ k := (Yunion_prop (Pair x y) z).mp h
   let ⟨ k, hk ⟩ := z_in_k
   have k_in_v : k ∈ V := all_members_are_sets hk.left
-  have k_is_x_or_y : k = x ∨ k = y := (Pair_φ x y k ).mp hk.left
+  haveI : IsSet k := ⟨ k_in_v ⟩
+  have k_is_x_or_y : k = x ∨ k = y := (Pair_φ k ).mp hk.left
   have z_in_x_or_y : z ∈ x ∨ z ∈ y :=
     Or.elim k_is_x_or_y
     (fun k_is_x =>
@@ -164,9 +165,9 @@ theorem union_pair_sub_union {x y} [IsSet x] [IsSet y] : Yunion (Pair x y) ⊆ x
       Or.intro_right (z ∈ x) z_in_y)
   (P₂_union_φ x y z).mpr z_in_x_or_y
 
-theorem union_sub_union_pair {x y} [IsSet x] [IsSet y] : x U y ⊆ Yunion (Pair x y) :=
+theorem union_sub_union_pair {x y} [IsSet x] [IsSet y] : x ∪ y ⊆ Yunion (Pair x y) :=
   fun z =>
-  fun (h : z ∈ x U y) =>
+  fun (h : z ∈ x ∪ y) =>
   have z_in_x_or_y : z ∈ x ∨ z ∈ y := (P₂_union_φ x y z).mp h
   have exists_k : ∃ k, k ∈ (Pair x y) ∧ z ∈ k :=
     z_in_x_or_y.elim
@@ -178,7 +179,10 @@ theorem union_sub_union_pair {x y} [IsSet x] [IsSet y] : x U y ⊆ Yunion (Pair 
       Exists.intro y ⟨ y_in_pair, z_in_y ⟩)
   (Yunion_prop (Pair x y) z).mpr exists_k
 
-theorem union_of_sets_is_set {x y} [IsSet x] [IsSet y] : x U y ∈ V :=
+theorem union_is_yunion {x y} [IsSet x] [IsSet y] : Yunion (Pair x y) = x ∪ y :=
+  equality_sub.mpr ⟨ union_pair_sub_union, union_sub_union_pair ⟩
+
+theorem union_of_sets_is_set {x y} [IsSet x] [IsSet y] : x ∪ y ∈ V :=
   have union_pair_is_set : Yunion (Pair x y) ∈ V := A₅ (Pair x y)
   have union_equals_union_pair := equality_sub.mpr ⟨ union_sub_union_pair, union_pair_sub_union ⟩
   by rw [union_equals_union_pair]; assumption

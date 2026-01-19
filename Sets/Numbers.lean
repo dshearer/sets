@@ -6,7 +6,7 @@ open Classical
 
 /--***** Numbers *****--/
 
-noncomputable def suc (n) [IsSet n] := n U Single n
+noncomputable def suc (n) [IsSet n] := n ∪ Single n
 
 theorem number_in_successor (n) [IsSet n] : n ∈ suc n :=
   (P₂_union_φ n (Single n) n).mpr (Or.inr (pair_has_left n n))
@@ -20,7 +20,7 @@ def is_number (x : Class) : Prop := x ∈ V ∧ (∀ y, is_inductive y → x ∈
 class IsNumber (a) [IsSet a]: Prop where
   prop : is_number a
 
-theorem successor_possibilities {x n} [IsSet n] : x ∈ suc n ↔ x ∈ n ∨ x = n :=
+theorem successor_possibilities {x n} [IsSet x] [IsSet n] : x ∈ suc n ↔ x ∈ n ∨ x = n :=
   have h1 : x ∈ suc n → x ∈ n ∨ x = n :=
     fun x_in_suc =>
     (P₂_union_φ n (Single n) x).mp x_in_suc |>.elim Or.inl (Or.inr ∘ in_single)
@@ -58,6 +58,8 @@ theorem succ_n_transitive {n} [IsSet n] [IsNumber n] (h : is_transitive n) : is_
   fun (x y : Class) =>
   fun (h1 : x ∈ y ∧ y ∈ suc n) =>
   -- Since y ∈ suc n, then either:
+  have y_in_v : y ∈ V := all_members_are_sets h1.right
+  haveI : IsSet y := ⟨ y_in_v ⟩
   (successor_possibilities.mp h1.right).elim
     (fun h2 : y ∈ n =>
       -- // x ∈ suc n
@@ -143,6 +145,8 @@ protected theorem class_of_ord_nbrs_is_inductive : is_inductive Numbers.P₂_ord
             -- If suc n is in itself, then n is not ordinary
             (fun suc_not_ordinary =>
               have suc_in_self : suc y ∈ suc y := not_not.mp suc_not_ordinary
+              have suc_in_v : suc y ∈ V := all_members_are_sets suc_in_self
+              haveI : IsSet (suc y) := ⟨ suc_in_v ⟩
               Or.elim (successor_possibilities.mp suc_in_self)
                 (fun suc_y_in_y =>
                   have suc_sub_h : suc y ⊆ y := Sets.members_of_trans_are_subsets (T_3_1 y_is_nbr) suc_y_in_y
@@ -192,6 +196,8 @@ protected theorem class_of_hereditary_nbrs_is_inductive : is_inductive Numbers.P
     have suc_is_nbr : is_number (suc y) := peano_2
     have suc_hereditary : ∀ (x : Class), x ∈ suc y → is_number x :=
       fun x => fun x_in_suc =>
+      have x_in_v : x ∈ V := all_members_are_sets x_in_suc
+      haveI : IsSet x := ⟨ x_in_v ⟩
       Or.elim (successor_possibilities.mp x_in_suc)
         (fun x_in_y => y_hereditary x x_in_y)
         (fun x_eq_y => x_eq_y ▸ y_is_nbr)
