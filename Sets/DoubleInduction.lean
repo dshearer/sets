@@ -7,6 +7,8 @@ open Classes
 open Sets
 open Structures
 
+section
+
 variable (m r g : Class) [IsRelation r] [IsRelation g] [IsFunction g]
 
 def is_closed_under (a f : Class) [IsRelation f] [IsFunction f] : Prop :=
@@ -118,12 +120,17 @@ protected theorem DIP_step2 (hm : is_min_inductive_under m g) (hr : DoubleInduct
   have x_in_all_right_normals : x ∈ all_right_normals := all_right_normals_is_m ▸ x_in_m
   ((DoubleInduction.P₂_right_normal_in_m_φ m r x).mp x_in_all_right_normals).right
 
-#check DoubleInduction.DIP_step2
-
 theorem DIP : is_min_inductive_under m g → DoubleInduction.is_double_ind_relation m r g → ∀ x y [IsSet x] [IsSet y], x ∈ m → y ∈ m → (OrdPair x y) ∈ r :=
   fun min_ind => fun r_props => fun x y _ _ => fun x_in_m => fun y_in_m =>
   have x_is_right_norm := DoubleInduction.DIP_step2 m r g min_ind r_props x x_in_m
   have x_is_left_norm := DoubleInduction.DIP_step1 m r g x min_ind r_props x_is_right_norm
   x_is_left_norm.right y y_in_m
+
+end
+
+def is_progressing (g) [IsRelation g] [IsFunction g] : Prop :=
+  (∀ y, y ∈ Dom g → IsSet y) ->
+  (∀ y, y ∈ Ran g → IsSet y) ->
+  ∀ x [IsSet x] [InDom x g], x ⊆ (g ⟨ x ⟩).val
 
 end DoubleInduction

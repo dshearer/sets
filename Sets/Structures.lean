@@ -82,6 +82,10 @@ axiom Dom_φ (r) [IsRelation r] (x) [IsSet x] : x ∈ Dom r ↔ ∃ (y : Class) 
 class InDom (x r) [IsRelation r] : Prop where
   prop : x ∈ Dom r
 
+theorem in_dom_implies_is_set (x r) [IsRelation r] [InDom x r] : IsSet x :=
+  have h := @InDom.prop x r
+  ⟨ Sets.all_members_are_sets h ⟩
+
 axiom Ran (r) [IsRelation r] : Class
 axiom Ran_φ (r) [IsRelation r] (x) [IsSet x] : x ∈ Ran r ↔ ∃ (y : Class) (_ : IsSet y), (OrdPair y x) ∈ r
 
