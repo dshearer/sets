@@ -30,10 +30,10 @@ protected def is_double_ind_relation_2 : Prop :=
 protected def is_double_ind_relation : Prop :=
   DoubleInduction.is_double_ind_relation_1 m r ∧ DoubleInduction.is_double_ind_relation_2 m r g
 
-def is_left_normal (x) [IsSet x] : Prop :=
+protected def is_left_normal (x) [IsSet x] : Prop :=
   x ∈ m ∧ ∀ y [IsSet y], y ∈ m → (OrdPair x y) ∈ r
 
-def is_right_normal (x) [IsSet x] : Prop :=
+protected def is_right_normal (x) [IsSet x] : Prop :=
   x ∈ m ∧ ∀ y [IsSet y], y ∈ m → (OrdPair y x) ∈ r
 
 protected axiom P₂_y_for_which_Rxy (m r x : Class) [IsRelation r] [IsSet x] : Class
@@ -45,7 +45,7 @@ protected theorem P₂_y_for_which_Rxy_is_sub (x) [IsSet x] : DoubleInduction.P�
   haveI : IsSet y := ⟨ Sets.all_members_are_sets hy ⟩
   ((DoubleInduction.P₂_y_for_which_Rxy_φ m r x y).mp hy).left
 
-protected theorem P₂_y_in_m_is_closed (x) [IsSet x] (hm : is_min_inductive_under m g) (hx : is_right_normal m r x) (hr : DoubleInduction.is_double_ind_relation m r g) : is_closed_under (DoubleInduction.P₂_y_for_which_Rxy m r x) g :=
+protected theorem P₂_y_in_m_is_closed (x) [IsSet x] (hm : is_min_inductive_under m g) (hx : DoubleInduction.is_right_normal m r x) (hr : DoubleInduction.is_double_ind_relation m r g) : is_closed_under (DoubleInduction.P₂_y_for_which_Rxy m r x) g :=
   fun y [IsSet y] [InDom y g] => fun y_in =>
   have Rxy : (OrdPair x y) ∈ r := ((DoubleInduction.P₂_y_for_which_Rxy_φ m r x y).mp y_in).right
   have y_in_m : y ∈ m := ((DoubleInduction.P₂_y_for_which_Rxy_φ m r x y).mp y_in).left
@@ -55,7 +55,7 @@ protected theorem P₂_y_in_m_is_closed (x) [IsSet x] (hm : is_min_inductive_und
   have gy_in_m : gy ∈ m := hm.left.right y y_in_m
   (DoubleInduction.P₂_y_for_which_Rxy_φ m r x gy).mpr ⟨ gy_in_m, Rxgy ⟩
 
-protected theorem P₂_y_in_m_is_inductive (x) [IsSet x] (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) (hx : is_right_normal m r x) :
+protected theorem P₂_y_in_m_is_inductive (x) [IsSet x] (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) (hx : DoubleInduction.is_right_normal m r x) :
   is_inductive_under (DoubleInduction.P₂_y_for_which_Rxy m r x) g :=
   have has_null : Null ∈ (DoubleInduction.P₂_y_for_which_Rxy m r x) :=
     -- // Null ∈ m ∧ (OrdPair x Null) ∈ r
@@ -64,7 +64,7 @@ protected theorem P₂_y_in_m_is_inductive (x) [IsSet x] (hm : is_min_inductive_
     (DoubleInduction.P₂_y_for_which_Rxy_φ m r x Null).mpr ⟨ null_in_m, pair_in_r ⟩
   And.intro has_null (DoubleInduction.P₂_y_in_m_is_closed m r g x hm hx hr)
 
-protected theorem DIP_step1 (g x) [IsSet x] [IsRelation g] [IsFunction g] (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) : is_right_normal m r x → is_left_normal m r x :=
+protected theorem DIP_step1 (g x) [IsSet x] [IsRelation g] [IsFunction g] (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) : DoubleInduction.is_right_normal m r x → DoubleInduction.is_left_normal m r x :=
   fun x_right_norm =>
   let k := (DoubleInduction.P₂_y_for_which_Rxy m r x)
   have k_inductive : is_inductive_under k g := DoubleInduction.P₂_y_in_m_is_inductive m r g x hm hr x_right_norm
@@ -79,13 +79,13 @@ protected theorem DIP_step1 (g x) [IsSet x] [IsRelation g] [IsFunction g] (hm : 
 
 protected axiom P₂_right_normal_in_m (m : Class) : Class
 
-protected axiom P₂_right_normal_in_m_φ (x : Class) [IsSet x] : x ∈ DoubleInduction.P₂_right_normal_in_m m ↔ x ∈ m ∧ is_right_normal m r x
+protected axiom P₂_right_normal_in_m_φ (x : Class) [IsSet x] : x ∈ DoubleInduction.P₂_right_normal_in_m m ↔ x ∈ m ∧ DoubleInduction.is_right_normal m r x
 
 protected theorem P₂_right_normal_in_m_is_inductive (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) : is_inductive_under (DoubleInduction.P₂_right_normal_in_m m) g :=
   let k := DoubleInduction.P₂_right_normal_in_m m
   have has_null : Null ∈ k :=
     have null_in_m : Null ∈ m := hm.left.left
-    have null_right_normal : is_right_normal m r Null :=
+    have null_right_normal : DoubleInduction.is_right_normal m r Null :=
       have h : ∀ y [IsSet y], y ∈ m → (OrdPair y Null) ∈ r :=
         fun y => fun y_in_m =>
         hr.left y y_in_m
@@ -95,11 +95,11 @@ protected theorem P₂_right_normal_in_m_is_inductive (hm : is_min_inductive_und
     fun x => fun x_in_k =>
     let gx := g⟨x⟩
     let ⟨ x_in_m, x_right_normal ⟩ := ((DoubleInduction.P₂_right_normal_in_m_φ m r x).mp x_in_k)
-    have x_left_normal : is_left_normal m r x := DoubleInduction.DIP_step1 m r g x hm hr x_right_normal
+    have x_left_normal : DoubleInduction.is_left_normal m r x := DoubleInduction.DIP_step1 m r g x hm hr x_right_normal
     have m_inductive : is_inductive_under m g := hm.left
     have m_closed : is_closed_under m g := m_inductive.right
     have gx_in_m : gx ∈ m := m_closed x x_in_m
-    have gx_right_normal : is_right_normal m r gx :=
+    have gx_right_normal : DoubleInduction.is_right_normal m r gx :=
       have h : ∀ y [IsSet y], y ∈ m → (OrdPair y gx) ∈ r :=
         fun y => fun y_in_m =>
         have Ryx : (OrdPair y x) ∈ r := x_right_normal.right y y_in_m
@@ -109,7 +109,7 @@ protected theorem P₂_right_normal_in_m_is_inductive (hm : is_min_inductive_und
     (DoubleInduction.P₂_right_normal_in_m_φ m r gx).mpr ⟨ gx_in_m, gx_right_normal ⟩
   And.intro has_null is_closed
 
-protected theorem DIP_step2 (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) : ∀ x [IsSet x], x ∈ m → is_right_normal m r x :=
+protected theorem DIP_step2 (hm : is_min_inductive_under m g) (hr : DoubleInduction.is_double_ind_relation m r g) : ∀ x [IsSet x], x ∈ m → DoubleInduction.is_right_normal m r x :=
   fun x [IsSet x] => fun x_in_m =>
   let all_right_normals := DoubleInduction.P₂_right_normal_in_m m
   have is_sub : all_right_normals ⊆ m :=
