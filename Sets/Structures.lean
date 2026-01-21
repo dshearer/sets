@@ -103,6 +103,7 @@ noncomputable instance apply_is_set (r x) [IsRelation r] [IsFunction r] [IsSet x
     : IsSet (apply r x).val :=
   Classical.choose (apply r x).property
 
-notation:100 f " ⟨ " x " ⟩ " => apply f x
+set_option quotPrecheck false in
+notation:10000 f "⟨" x "⟩" => (apply f x).val
 
 end Structures

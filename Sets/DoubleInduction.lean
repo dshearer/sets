@@ -12,7 +12,7 @@ section
 variable (m r g : Class) [IsRelation r] [IsRelation g] [IsFunction g]
 
 def is_closed_under (a f : Class) [IsRelation f] [IsFunction f] : Prop :=
-  ∀ x [IsSet x] [InDom x f], x ∈ a → (f ⟨ x ⟩).val ∈ a
+  ∀ x [IsSet x] [InDom x f], x ∈ a → f⟨x⟩ ∈ a
 
 def is_inductive_under (a f : Class) [IsRelation f] [IsFunction f] : Prop :=
   Null ∈ a ∧ is_closed_under a f
@@ -24,7 +24,7 @@ protected def is_double_ind_relation_1 : Prop :=
   ∀ x [IsSet x], x ∈ m → (OrdPair x Null) ∈ r
 
 protected def is_double_ind_relation_2 : Prop :=
-  ∀ x y [IsSet x] [IsSet y] [InDom y g], x ∈ m → y ∈ m → (OrdPair x y) ∈ r → (OrdPair y x) ∈ r → (OrdPair x (g ⟨ y ⟩).val) ∈ r
+  ∀ x y [IsSet x] [IsSet y] [InDom y g], x ∈ m → y ∈ m → (OrdPair x y) ∈ r → (OrdPair y x) ∈ r → (OrdPair x g⟨y⟩) ∈ r
 
 -- Properties of R in Theorem 4.3 (Double Induction Principle)
 protected def is_double_ind_relation : Prop :=
@@ -50,7 +50,7 @@ protected theorem P₂_y_in_m_is_closed (x) [IsSet x] (hm : is_min_inductive_und
   have Rxy : (OrdPair x y) ∈ r := ((DoubleInduction.P₂_y_for_which_Rxy_φ m r x y).mp y_in).right
   have y_in_m : y ∈ m := ((DoubleInduction.P₂_y_for_which_Rxy_φ m r x y).mp y_in).left
   have Ryx : (OrdPair y x) ∈ r := hx.right y y_in_m
-  let gy := (g ⟨ y ⟩).val
+  let gy := g⟨y⟩
   have Rxgy : (OrdPair x gy ∈ r) := hr.right x y hx.left y_in_m Rxy Ryx
   have gy_in_m : gy ∈ m := hm.left.right y y_in_m
   (DoubleInduction.P₂_y_for_which_Rxy_φ m r x gy).mpr ⟨ gy_in_m, Rxgy ⟩
@@ -93,7 +93,7 @@ protected theorem P₂_right_normal_in_m_is_inductive (hm : is_min_inductive_und
     (DoubleInduction.P₂_right_normal_in_m_φ m r Null).mpr ⟨ null_in_m, null_right_normal ⟩
   have is_closed : is_closed_under k g :=
     fun x => fun x_in_k =>
-    let gx := (g ⟨ x ⟩).val
+    let gx := g⟨x⟩
     let ⟨ x_in_m, x_right_normal ⟩ := ((DoubleInduction.P₂_right_normal_in_m_φ m r x).mp x_in_k)
     have x_left_normal : is_left_normal m r x := DoubleInduction.DIP_step1 m r g x hm hr x_right_normal
     have m_inductive : is_inductive_under m g := hm.left
@@ -131,6 +131,6 @@ end
 def is_progressing (g) [IsRelation g] [IsFunction g] : Prop :=
   (∀ y, y ∈ Dom g → IsSet y) ->
   (∀ y, y ∈ Ran g → IsSet y) ->
-  ∀ x [IsSet x] [InDom x g], x ⊆ (g ⟨ x ⟩).val
+  ∀ x [IsSet x] [InDom x g], x ⊆ g⟨x⟩
 
 end DoubleInduction
