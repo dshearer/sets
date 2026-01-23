@@ -128,9 +128,55 @@ theorem DIP : is_min_inductive_under m g → DoubleInduction.is_double_ind_relat
 
 end
 
-def is_progressing (g) [IsRelation g] [IsFunction g] : Prop :=
-  (∀ y, y ∈ Dom g → IsSet y) ->
-  (∀ y, y ∈ Ran g → IsSet y) ->
-  ∀ x [IsSet x] [InDom x g], x ⊆ g⟨x⟩
+def is_progressing (g) [IsRelation g] [IsFunction g] : Prop := ∀ x [IsSet x] [InDom x g], x ⊆ g⟨x⟩
+
+def are_comparable (a b) [IsSet a] [IsSet b] : Prop := a ⊆ b ∨ b ⊆ a
+
+def is_nest (a: Class) : Prop := ∀ x y [IsSet x] [IsSet y], x ∈ a → x ∈ a → are_comparable x y
+
+-- Progressing Function Lemma
+protected axiom P₂_PFL_R (g) [IsRelation g] [IsFunction g] : Class
+protected axiom P₂_PFL_R_φ (g) [IsRelation g] [IsFunction g] (x y : Class) [IsSet x] [IsSet y] [InDom x g]: (OrdPair x y) ∈ DoubleInduction.P₂_PFL_R g ↔ (g⟨x⟩ ⊆ y ∨ y ⊆ x)
+
+theorem ProgressingFunctionLemma_1 (g) [IsRelation g] [IsFunction g] : ∀ y [IsSet y] [InDom y g], (OrdPair y Null) ∈ DoubleInduction.P₂_PFL_R g :=
+  fun y =>
+  have null_sub_y : Null ⊆ y := Sets.null_sub_everything y
+  have either : g⟨y⟩ ⊆ Null ∨ Null ⊆ y := Or.inr null_sub_y
+  (DoubleInduction.P₂_PFL_R_φ g y Null).mpr either
+
+theorem ProgressingFunctionLemma_2 (g) [IsRelation g] [IsFunction g] : ∀ x y [IsSet x] [IsSet y] [InDom x g] [InDom y g], (is_progressing g ∧ (OrdPair x y) ∈ DoubleInduction.P₂_PFL_R g ∧ (OrdPair y x) ∈ DoubleInduction.P₂_PFL_R g) → (OrdPair x g⟨y⟩) ∈ DoubleInduction.P₂_PFL_R g :=
+  fun x y => fun h =>
+  have g_progressing := h.left
+  have xy_in_r := h.right.left
+  have yx_in_r := h.right.right
+  have gx_sub_y_or_y_sub_x : g⟨x⟩ ⊆ y ∨ y ⊆ x := (DoubleInduction.P₂_PFL_R_φ g x y).mp xy_in_r
+  have gy_sub_x_or_x_sub_y : g⟨y⟩ ⊆ x ∨ x ⊆ y := (DoubleInduction.P₂_PFL_R_φ g y x).mp yx_in_r
+  have gx_sub_gy_or_gy_sub_x : g⟨x⟩ ⊆ g⟨y⟩ ∨ g⟨y⟩ ⊆ x :=
+    have gx_sub_y_then_r : g⟨x⟩ ⊆ y → (g⟨x⟩ ⊆ g⟨y⟩ ∨ g⟨y⟩ ⊆ x) :=
+      fun gx_sub_y =>
+      have y_sub_gy : y ⊆ g⟨y⟩ := g_progressing y
+      have gx_sub_gy : g⟨x⟩ ⊆ g⟨y⟩ := Classes.subclass_is_transitive gx_sub_y y_sub_gy
+      Or.inl gx_sub_gy
+    have gy_sub_x_then_r : g⟨y⟩ ⊆ x → (g⟨x⟩ ⊆ g⟨y⟩ ∨ g⟨y⟩ ⊆ x) := fun gy_sub_x => Or.inr gy_sub_x
+    have y_sub_x_and_x_sub_y_then_r : (y ⊆ x ∧ x ⊆ y) → (g⟨x⟩ ⊆ g⟨y⟩ ∨ g⟨y⟩ ⊆ x) :=
+      fun y_sub_x_and_x_sub_y =>
+      have y_eq_x : y = x := Classes.equality_sub.mpr y_sub_x_and_x_sub_y
+      have gy_sub_gy : g⟨y⟩ ⊆ g⟨y⟩ := Classes.subclass_is_reflexive
+      have gx_sub_gy : g⟨x⟩ ⊆ g⟨y⟩ := y_eq_x ▸ gy_sub_gy
+      Or.inl gx_sub_gy
+    Or.elim gx_sub_y_or_y_sub_x
+      (fun gx_sub_y =>
+       have y_sub_gy : y ⊆ g⟨y⟩ := g_progressing y
+       have gx_sub_gy : g⟨x⟩ ⊆ g⟨y⟩ := Classes.subclass_is_transitive gx_sub_y y_sub_gy
+       Or.inl gx_sub_gy)
+      (fun y_sub_x =>
+       Or.elim gy_sub_x_or_x_sub_y
+        (fun gy_sub_x => Or.inr gy_sub_x)
+        (fun x_sub_y =>
+         have y_eq_x : y = x := Classes.equality_sub.mpr ⟨ y_sub_x, x_sub_y ⟩
+         have gy_sub_gy : g⟨y⟩ ⊆ g⟨y⟩ := Classes.subclass_is_reflexive
+         have gx_sub_gy : g⟨x⟩ ⊆ g⟨y⟩ := y_eq_x ▸ gy_sub_gy
+         Or.inl gx_sub_gy))
+  (DoubleInduction.P₂_PFL_R_φ g x g⟨y⟩).mpr gx_sub_gy_or_gy_sub_x
 
 end DoubleInduction

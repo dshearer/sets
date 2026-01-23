@@ -99,6 +99,8 @@ axiom A₃ : Null ∈ V
 instance : IsSet Null where
   in_v := A₃
 
+theorem null_sub_everything (a) : Null ⊆ a := fun x => fun x_in_null => absurd x_in_null (Null_φ x)
+
 /--***** Pairing *****--/
 
 axiom Pair (a b : Class) [IsSet a] [IsSet b] : Class

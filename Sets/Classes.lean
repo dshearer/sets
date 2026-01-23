@@ -29,4 +29,11 @@ protected theorem equality_sub_2 {a b} : a = b → (a ⊆ b ∧ b ⊆ a) :=
 theorem equality_sub {a b} : a = b ↔ (a ⊆ b ∧ b ⊆ a) :=
   Iff.intro Classes.equality_sub_2 Classes.equality_sub_1
 
+theorem subclass_is_transitive {a b c} (a_sub_b : a ⊆ b) (b_sub_c : b ⊆ c) : a ⊆ c :=
+  fun x => fun x_in_a =>
+  have x_in_b : x ∈ b := a_sub_b x x_in_a
+  b_sub_c x x_in_b
+
+theorem subclass_is_reflexive {a} : a ⊆ a := fun _ => fun x_in_a => x_in_a
+
 end Classes
