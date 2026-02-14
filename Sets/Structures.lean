@@ -4,12 +4,30 @@ namespace Structures
 open Classes
 open Sets
 
-noncomputable def OrdPair (a b : Class) [IsSet a] [IsSet b] := Pair (Single a) (Pair a b)
+noncomputable def OrdPair (a b : Class) [IsSet a] [IsSet b] : Class := Pair (Single a) (Pair a b)
 
-theorem ord_pair_is_set (a b) [IsSet a] [IsSet b] : OrdPair a b ∈ V := A₄ (Single a) (Pair a b)
+def is_ord_pair (a : Class) : Prop := ∃ (x y : Class) (_ : IsSet x) (_ : IsSet y), a = OrdPair x y
 
-theorem L_2_4_3 (a b d) [IsSet a] [IsSet b] [IsSet d] : Pair a b = Pair a d → b = d :=
-  fun h =>
+class IsOrdPair (a) where
+  prop : is_ord_pair a
+
+instance (a b) [IsSet a] [IsSet b] : IsOrdPair (OrdPair a b) where
+  prop := ⟨ a, b, inferInstance, inferInstance, rfl ⟩
+
+instance {p} (h : is_ord_pair p) : IsOrdPair p where
+  prop := h
+
+instance (a) [IsOrdPair a] : IsPair a where
+  prop :=
+    let ⟨ x, y, x_is_set, y_is_set, a_eq_ordpair ⟩ := IsOrdPair.prop (a := a)
+    haveI : IsSet x := x_is_set
+    haveI : IsSet y := y_is_set
+    ⟨Single x, Pair x y, inferInstance, inferInstance, a_eq_ordpair⟩
+
+instance (a) [IsOrdPair a] : IsSet a where
+  in_v := A₄ a
+
+theorem L_2_4_3 {a b d} [IsSet a] [IsSet b] [IsSet d] (h : Pair a b = Pair a d) : b = d :=
   have b_in_first : b ∈ Pair a b := pair_has_right a b
   have b_in_second : b ∈ Pair a d := h ▸ b_in_first
   have b_is_a_or_d : b = a ∨ b = d := (Pair_φ b).mp b_in_second
@@ -22,6 +40,43 @@ theorem L_2_4_3 (a b d) [IsSet a] [IsSet b] [IsSet d] : Pair a b = Pair a d → 
       have d_eq_a : d = a := in_single d_in_single_a
       eq_comm.mp (b_eq_a ▸ d_eq_a))
     (fun b_eq_d => b_eq_d)
+
+theorem ord_pair_ident {a b c d} [IsSet a] [IsSet b] [IsSet c] [IsSet d] (h : OrdPair a b = OrdPair c d) : a = c ∧ b = d :=
+  have t : Pair (Single a) (Pair a b) = Pair (Single c) (Pair c d) := h
+  have single_a_eq_single_c : Single a = Single c :=
+    have t1 : Single a ∈ Pair (Single a) (Pair a b) := pair_has_left (Single a) (Pair a b)
+    have t2 : Single a ∈ Pair (Single c) (Pair c d) := t ▸ t1
+    have t3 : Single a = Single c ∨ Single a = Pair c d := in_pair t2
+    Or.elim t3
+      (fun single_a_eq_single_c => single_a_eq_single_c)
+      (fun single_a_eq_pair =>
+        have t4 : a = c ∧ a = d := single_pair_eq single_a_eq_pair
+        have t5 : Single a = Single a := rfl
+        t4.left ▸ t5)
+  have pair_ab_eq_pair_cd : Pair a b = Pair c d :=
+    have t1 : Pair a b ∈ Pair (Single a) (Pair a b) := pair_has_right (Single a) (Pair a b)
+    have t2 : Pair a b ∈ Pair (Single c) (Pair c d) := t ▸ t1
+    have t3 : Pair a b = Single c ∨ Pair a b = Pair c d := in_pair t2
+    t3.elim
+      (fun pair_ab_eq_single_c =>
+        -- When Pair a b = Single c, we show that Single c = Pair c d
+        have single_c_eq_pair_cd : Single c = Pair c d := by
+          -- From t and substitutions, derive Pair (Single c) (Single c) = Pair (Single c) (Pair c d)
+          have h1 : Pair (Single a) (Single c) = Pair (Single c) (Pair c d) := by
+            calc Pair (Single a) (Single c)
+              = Pair (Single a) (Pair a b) := by simp [pair_ab_eq_single_c]
+              _ = Pair (Single c) (Pair c d) := t
+          have h2 : Pair (Single c) (Single c) = Pair (Single c) (Pair c d) := by
+            calc Pair (Single c) (Single c)
+              = Pair (Single a) (Single c) := by simp [single_a_eq_single_c]
+              _ = Pair (Single c) (Pair c d) := h1
+          exact L_2_4_3 h2
+        Eq.trans pair_ab_eq_single_c single_c_eq_pair_cd)
+      (fun pair_ab_eq_pair_cd => pair_ab_eq_pair_cd)
+  have a_eq_c : a = c := single_id single_a_eq_single_c
+  have pair_ab_eq_pair_ad : Pair a b = Pair a d := a_eq_c ▸ pair_ab_eq_pair_cd
+  have b_eq_d : b = d := L_2_4_3 pair_ab_eq_pair_ad
+  ⟨ a_eq_c, b_eq_d ⟩
 
 -- Given two classes, there is a particular class called "product"
 
@@ -79,6 +134,17 @@ theorem T_2_7_1 (a b) [IsSet a] [IsSet b] : (Product a b) ∈ V :=
 
 class IsRelation (r: Class) : Prop where
   prop : r ⊆ Product V V
+
+theorem v_x_v_has_all_ord_pairs (p) [IsOrdPair p] : p ∈ Product V V :=
+  let ⟨ x, y, x_is_set, y_is_set, prop ⟩ := IsOrdPair.prop (a := p)
+  haveI : IsSet x := x_is_set
+  haveI : IsSet y := y_is_set
+  have x_in_v : x ∈ V := x_is_set.in_v
+  have y_in_v : y ∈ V := y_is_set.in_v
+  have cond : p = OrdPair x y ∧ x ∈ V ∧ y ∈ V := And.intro prop (And.intro x_in_v y_in_v)
+  have exists_cond : ∃ (a b : Class) (_ : IsSet a) (_: IsSet b), (p = OrdPair a b ∧ a ∈ V ∧ b ∈ V) := ⟨ x, y, inferInstance, inferInstance, cond ⟩
+  haveI : IsSet p := inferInstance
+  (Product_φ V V p).mpr exists_cond
 
 protected def dom_P₂ (r) [IsRelation r] := P₂ (fun x => ∃ (y : Class) (_ : IsSet y), (OrdPair x y) ∈ r)
 noncomputable def Dom (r) [IsRelation r] : Class := (Structures.dom_P₂ r).choose
