@@ -122,21 +122,35 @@ theorem null_sub_everything (a) : Null ⊆ a := fun x => fun x_in_null => absurd
 
 protected def Pair_P₂ (a b) [IsSet a] [IsSet b] := P₂ (fun x => x = a ∨ x = b)
 
-noncomputable def Pair (a b) [IsSet a] [IsSet b] := (Sets.Pair_P₂ a b).choose
+noncomputable def Pair (a b) [IsSet a] [IsSet b] : Class := (Sets.Pair_P₂ a b).choose
 
 noncomputable def Pair_φ {a b} [IsSet a] [IsSet b] (x) [IsSet x] := (Sets.Pair_P₂ a b).choose_spec (x := x)
 
+def is_pair (a : Class) : Prop := ∃ (x y : Class) (_ : IsSet x) (_ : IsSet y), a = Pair x y
+
+class IsPair (a) where
+  prop : is_pair a
+
+instance (a b) [IsSet a] [IsSet b] : IsPair (Pair a b) where
+  prop :=
+    let p := Pair a b
+    let eq : p = Pair a b := rfl
+    ⟨a, b, inferInstance, inferInstance, eq⟩
+
 noncomputable def Single (a : Class) [IsSet a] := Pair a a
 
-axiom A₄ (a b) [IsSet a] [IsSet b] : Pair a b ∈ V
+axiom A₄ (a) [IsPair a] : a ∈ V
 
-instance (a b : Class) [IsSet a] [IsSet b] : IsSet (Pair a b) where
-  in_v := A₄ a b
+instance (a) [IsPair a] : IsSet (a) where
+  in_v := A₄ a
 
-theorem C_4_1 (a) [IsSet a] : Pair a a ∈ V := A₄ a a
+theorem C_4_1 (a) [IsSet a] : Pair a a ∈ V := A₄ (Pair a a)
 
 instance (a) [IsSet a] : IsSet (Single a) where
   in_v := C_4_1 a
+
+theorem in_pair {a b x} [IsSet a] [IsSet b] [IsSet x] (h : x ∈ Pair a b) : x = a ∨ x = b :=
+  (Pair_φ x).mp h
 
 theorem pair_has_left (a b) [IsSet a] [IsSet b] : a ∈ Pair a b :=
   (Pair_φ a).mpr (Or.inl rfl)
@@ -144,8 +158,25 @@ theorem pair_has_left (a b) [IsSet a] [IsSet b] : a ∈ Pair a b :=
 theorem pair_has_right (a b) [IsSet a] [IsSet b] : b ∈ Pair a b :=
   (Pair_φ b).mpr (Or.inr rfl)
 
+theorem in_own_single {x} [IsSet x] : x ∈ Single x :=
+  pair_has_left x x
+
 theorem in_single {x y : Class} [IsSet x] [IsSet y] (h : x ∈ Single y) : x = y :=
   (Pair_φ x).mp h |>.elim id id
+
+theorem single_id {x y} [IsSet x] [IsSet y] (h : Single x = Single y) : x = y :=
+  have x_in_own : x ∈ Single x := in_own_single
+  have x_in_other : x ∈ Single y := h ▸ x_in_own
+  in_single x_in_other
+
+theorem single_pair_eq {x y z} [IsSet x] [IsSet y] [IsSet z] (h : Single x = Pair y z) : x = y ∧ x = z :=
+  have y_in_pair : y ∈ Pair y z := pair_has_left y z
+  have y_in_single : y ∈ Single x := h ▸ y_in_pair
+  have y_eq_x : y = x := in_single y_in_single
+  have z_in_pair : z ∈ Pair y z := pair_has_right y z
+  have z_in_single : z ∈ Single x := h ▸ z_in_pair
+  have z_eq_x : z = x := in_single z_in_single
+  ⟨ eq_comm.mp y_eq_x, eq_comm.mp z_eq_x ⟩
 
 /--***** Union *****--/
 
