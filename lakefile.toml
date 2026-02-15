@@ -1,10 +1,6 @@
 name = "sets"
 version = "0.1.0"
-defaultTargets = ["sets"]
+defaultTargets = ["Sets"]
 
 [[lean_lib]]
 name = "Sets"
-
-[[lean_exe]]
-name = "sets"
-root = "Main"
