@@ -1,0 +1,1 @@
+A formalization of "Set Theory and the Continuum Problem" (Raymond M. Smullyan and Melvin Fitting) in Lean.
