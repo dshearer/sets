@@ -1,0 +1,49 @@
+name: Check Dependencies
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Install Lean
+        uses: leanprover/lean-action@v1
+        with:
+          auto-build: false
+      
+      - name: Update lake-manifest
+        run: |
+          lake update
+      
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if git diff --quiet lake-manifest.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No dependency updates available"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Dependencies have updates available"
+          fi
+      
+      - name: Create Pull Request
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore: update dependencies'
+          title: 'Update Lean dependencies'
+          body: |
+            This PR updates the project dependencies.
+            
+            Please review the changes and ensure all proofs still compile.
+          branch: update-dependencies
+          delete-branch: true

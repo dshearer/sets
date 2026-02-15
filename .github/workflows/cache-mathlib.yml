@@ -1,0 +1,35 @@
+name: Cache Build Artifacts
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  cache:
+    name: Build and Cache
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Cache Lake packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake/packages
+            .lake/build
+          key: ${{ runner.os }}-lake-${{ hashFiles('lake-manifest.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lake-
+      
+      - name: Build project
+        uses: leanprover/lean-action@v1
+        with:
+          build-args: '--verbose'
+      
+      - name: Build status
+        run: |
+          echo "✓ Build completed successfully"
+          echo "Cache updated for future runs"

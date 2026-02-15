@@ -2,13 +2,29 @@ name: Lean Action CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build:
+    name: Build and Test
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: leanprover/lean-action@v1
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Build project
+        uses: leanprover/lean-action@v1
+        with:
+          use-mathlib-cache: false
+          build-args: '--verbose'
+      
+      - name: Check for warnings
+        run: |
+          lake build 2>&1 | tee build.log
+          if grep -i "warning" build.log; then
+            echo "::warning::Build contains warnings"
+          fi
