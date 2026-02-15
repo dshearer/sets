@@ -185,6 +185,10 @@ theorem fun_apply (f x) [IsRelation f] [IsFunction f] [IsSet x] [InDom x f] : (O
   let ⟨ _, ord_pair_in_f ⟩ := (apply f x).property
   ord_pair_in_f
 
+theorem equal_args_equal_values {f x y} [IsRelation f] [IsFunction f] [IsSet x] [IsSet y] [InDom x f] [InDom y f] (x_eq_y : x = y) : f⟨x⟩ = f⟨y⟩ :=
+  have fx_eq_fx : f⟨x⟩ = f⟨x⟩ := rfl
+  x_eq_y ▸ fx_eq_fx
+
 -- Subtraction
 
 protected def subtract_P₂ (a x : Class) [IsSet x] := P₂ (fun y => y ∈ a ∧ y ≠ x)
